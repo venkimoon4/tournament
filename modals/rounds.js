@@ -32,6 +32,11 @@ const roundSchema = new mongoose.Schema({
       },
     },
   ],
+  oddTeam: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Teams",
+    default: null,
+  },
 });
 
 const Round = mongoose.model("Round", roundSchema);

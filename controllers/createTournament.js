@@ -6,76 +6,40 @@ const createRoundOne = async (fixingType, teams, tournamentId) => {
   let roundNumber = 1;
   let matchNumber = 0;
 
-  if (fixingType === "sequential") {
+  if (fixingType === "sequential" || fixingType === "random" || fixingType === "top_vs_bottom") {
+    if (fixingType === "random") {
+      shuffleArray(teams);
+    } else if (fixingType === "top_vs_bottom") {
+      teams.sort((a, b) => b.rank - a.rank);
+    }
+
     const matches = [];
+    let oddTeam = null;
+
     for (let i = 0; i < teams.length; i += 2) {
-      matches.push({
-        matchNumber: ++matchNumber,
-        team1: teams[i]?._id,
-        team2: teams[i + 1]?._id,
-        winner: null,
-      });
+      if (i + 1 < teams.length) {
+        matches.push({
+          matchNumber: ++matchNumber,
+          team1: teams[i]._id,
+          team2: teams[i + 1]._id,
+          winner: null,
+        });
+      } else {
+        oddTeam = teams[i]._id;
+      }
     }
 
     const firstRound = new Round({
       tournamentId: tournamentId,
       roundNumber,
       matches,
+      oddTeam,
     });
     const savedRound = await firstRound.save();
 
     return savedRound;
-  } else if (fixingType === "random") {
-    shuffleArray(teams);
-
-    const matches = [];
-    for (let i = 0; i < teams.length; i += 2) {
-      matches.push({
-        matchNumber: ++matchNumber,
-        team1: teams[i]?._id,
-        team2: teams[i + 1]?._id,
-        winner: null,
-      });
-    }
-
-    const randomRound = new Round({
-      tournamentId: tournamentId,
-      roundNumber,
-      matches,
-    });
-    const savedRound = await randomRound.save();
-
-    return savedRound;
-  } else if (fixingType === "top_vs_bottom") {
-    // Assuming top vs bottom logic means pairing the strongest teams with the weakest
-    const sortedTeams = [...teams].sort((a, b) => {
-      // Example: Sorting teams by some criteria (e.g., ranking)
-      return b.rank - a.rank; // Sort descending by rank (assuming rank is a property of teams)
-    });
-
-    const matches = [];
-    const halfLength = Math.ceil(sortedTeams.length / 2);
-    for (let i = 0; i < halfLength; i++) {
-      matches.push({
-        matchNumber: ++matchNumber,
-        team1: sortedTeams[i]?._id,
-        team2: sortedTeams[sortedTeams.length - 1 - i]?._id,
-        winner: null,
-      });
-    }
-
-    const topBottomRound = new Round({
-      tournamentId: tournamentId,
-      roundNumber,
-      matches,
-    });
-    const savedRound = await topBottomRound.save();
-
-    return savedRound;
   } else {
-    throw new Error(
-      "Unsupported fixingType. Must be 'sequential', 'random', or 'top_vs_bottom'."
-    );
+    throw new Error("Unsupported fixingType. Must be 'sequential', 'random', or 'top_vs_bottom'.");
   }
 };
 
@@ -166,6 +130,10 @@ const createTournament = async (req, res) => {
       findTeams,
       saveTournament._id
     );
+
+    // const findFirstRound = await Round.findOne({
+    //   tournamentId: saveTournament._id,
+    // });
 
     const numberOfRounds = calculateNumberOfRounds(
       saveTournament.noOfParticipants

@@ -6,11 +6,24 @@ const createRoundOne = async (fixingType, teams, tournamentId) => {
   let roundNumber = 1;
   let matchNumber = 0;
 
-  if (fixingType === "sequential" || fixingType === "random" || fixingType === "top_vs_bottom") {
+  if (
+    fixingType === "sequential" ||
+    fixingType === "random" ||
+    fixingType === "top_vs_bottom"
+  ) {
     if (fixingType === "random") {
       shuffleArray(teams);
     } else if (fixingType === "top_vs_bottom") {
-      teams.sort((a, b) => b.rank - a.rank);
+      teams.sort((a, b) => a.rank - b.rank);
+      const half = Math.ceil(teams.length / 2);
+      const topTeams = teams.slice(0, half);
+      const bottomTeams = teams.slice(-half).reverse();
+      teams = [];
+
+      for (let i = 0; i < half; i++) {
+        if (topTeams[i]) teams.push(topTeams[i]);
+        if (bottomTeams[i]) teams.push(bottomTeams[i]);
+      }
     }
 
     const matches = [];
@@ -39,7 +52,9 @@ const createRoundOne = async (fixingType, teams, tournamentId) => {
 
     return savedRound;
   } else {
-    throw new Error("Unsupported fixingType. Must be 'sequential', 'random', or 'top_vs_bottom'.");
+    throw new Error(
+      "Unsupported fixingType. Must be 'sequential', 'random', or 'top_vs_bottom'."
+    );
   }
 };
 
